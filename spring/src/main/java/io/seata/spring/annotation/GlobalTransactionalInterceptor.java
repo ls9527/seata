@@ -85,11 +85,10 @@ public class GlobalTransactionalInterceptor implements ConfigurationChangeListen
 
     //region DEFAULT_GLOBAL_TRANSACTION_TIMEOUT
 
-    private static int defaultGlobalTransactionTimeout = 0;
+    private static final int defaultGlobalTransactionTimeout = initDefaultGlobalTransactionTimeout();
 
-    private void initDefaultGlobalTransactionTimeout() {
-        if (GlobalTransactionalInterceptor.defaultGlobalTransactionTimeout <= 0) {
-            int defaultGlobalTransactionTimeout;
+    private static int initDefaultGlobalTransactionTimeout() {
+            int defaultGlobalTransactionTimeout = 0;
             try {
                 defaultGlobalTransactionTimeout = ConfigurationFactory.getInstance().getInt(
                         ConfigurationKeys.DEFAULT_GLOBAL_TRANSACTION_TIMEOUT, DEFAULT_GLOBAL_TRANSACTION_TIMEOUT);
@@ -102,8 +101,7 @@ public class GlobalTransactionalInterceptor implements ConfigurationChangeListen
                         defaultGlobalTransactionTimeout, DEFAULT_GLOBAL_TRANSACTION_TIMEOUT);
                 defaultGlobalTransactionTimeout = DEFAULT_GLOBAL_TRANSACTION_TIMEOUT;
             }
-            GlobalTransactionalInterceptor.defaultGlobalTransactionTimeout = defaultGlobalTransactionTimeout;
-        }
+            return defaultGlobalTransactionTimeout;
     }
 
     //endregion
@@ -131,7 +129,6 @@ public class GlobalTransactionalInterceptor implements ConfigurationChangeListen
                 startDegradeCheck();
             }
         }
-        this.initDefaultGlobalTransactionTimeout();
     }
 
     @Override
