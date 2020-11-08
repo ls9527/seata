@@ -45,7 +45,7 @@ public @interface GlobalTransactional {
      *
      * @return timeoutMills in MILLISECONDS.
      */
-    int timeoutMills() default DefaultValues.DEFAULT_GLOBAL_TRANSACTION_TIMEOUT;
+    int timeoutMills() default -1;
 
     /**
      * Given name of the global transaction instance.
