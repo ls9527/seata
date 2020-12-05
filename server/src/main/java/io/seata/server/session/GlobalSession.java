@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * 全局会话
  * The type Global session.
  *
  * @author sharajava

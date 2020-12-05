@@ -57,6 +57,14 @@ import org.springframework.context.ConfigurableApplicationContext;
 import static io.seata.common.DefaultValues.DEFAULT_DISABLE_GLOBAL_TRANSACTION;
 
 /**
+ * 用于扫描全局事物标签的处理类, 实现了 BeanPostProcessor
+ * 对于 Spring事物+Spring异步+Seata事物的BeanPostProcessor顺序如下:
+ *
+ * 1. AnnotationAwareAspectJAutoProxyCreator(事物以及常见的自定义Aop)
+ * 2. AsyncAnnotationBeanPostProcessor(@Async注解的Aop)
+ * 3. GlobalTransactionScanner(Seata的全局事物全局锁)
+ *
+ *
  * The type Global transaction scanner.
  *
  * @author slievrly
@@ -75,8 +83,9 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
     private static final int DEFAULT_MODE = AT_MODE + MT_MODE;
 
     private static final Set<String> PROXYED_SET = new HashSet<>();
-
+    // TCC拦截器
     private MethodInterceptor interceptor;
+    // 全局事物拦截器
     private MethodInterceptor globalTransactionalInterceptor;
 
     private final String applicationId;
@@ -191,12 +200,12 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
         if (StringUtils.isNullOrEmpty(applicationId) || StringUtils.isNullOrEmpty(txServiceGroup)) {
             throw new IllegalArgumentException(String.format("applicationId: %s, txServiceGroup: %s", applicationId, txServiceGroup));
         }
-        //init TM
+        // 初始化事物管理器
         TMClient.init(applicationId, txServiceGroup, accessKey, secretKey);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Transaction Manager Client is initialized. applicationId[{}] txServiceGroup[{}]", applicationId, txServiceGroup);
         }
-        //init RM
+        // 初始化资源管理器
         RMClient.init(applicationId, txServiceGroup);
         if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Resource Manager is initialized. applicationId[{}] txServiceGroup[{}]", applicationId, txServiceGroup);
@@ -214,7 +223,9 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
             ((ConfigurableApplicationContext) applicationContext).registerShutdownHook();
             ShutdownHook.removeRuntimeShutdownHook();
         }
+        // 注册关闭应用时卸载事物管理器的处理
         ShutdownHook.getInstance().addDisposable(TmNettyRemotingClient.getInstance(applicationId, txServiceGroup));
+        // 注册关闭应用时卸载资源管理器的处理
         ShutdownHook.getInstance().addDisposable(RmNettyRemotingClient.getInstance(applicationId, txServiceGroup));
     }
 
@@ -246,7 +257,7 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
                     return bean;
                 }
                 interceptor = null;
-                //check TCC proxy
+                // 检查是不是TCC代理, 这里有两种代理，TCC代理和AT代理
                 if (TCCBeanParserUtils.isTccAutoProxy(bean, beanName, applicationContext)) {
                     //TCC interceptor, proxy bean of sofa:reference/dubbo:reference, and LocalTCC
                     interceptor = new TccActionInterceptor(TCCBeanParserUtils.getRemotingDesc(beanName));

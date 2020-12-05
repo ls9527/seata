@@ -15,17 +15,18 @@
  */
 package io.seata.spring.annotation;
 
+import io.seata.common.DefaultValues;
+import io.seata.tm.api.transaction.Propagation;
+import org.aopalliance.intercept.MethodInvocation;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.seata.common.DefaultValues;
-import io.seata.tm.api.transaction.Propagation;
-import org.aopalliance.intercept.MethodInvocation;
-
 /**
+ * 全局事物标签注解
  * The interface Global transactional.
  *
  * @author slievrly
@@ -35,11 +36,14 @@ import org.aopalliance.intercept.MethodInvocation;
  * @see io.seata.spring.tcc.TccActionInterceptor#invoke(MethodInvocation) // RM: the interceptor of TCC mode
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD,ElementType.TYPE})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Inherited
 public @interface GlobalTransactional {
 
     /**
+     * 全局事物超时毫秒数
+     * 默认60秒, 如果手动设置成60秒,将会没有意义。实际上超时时间仍然是配置中心获取的超时时间
+     *
      * Global transaction timeoutMills in MILLISECONDS.
      * If client.tm.default-global-transaction-timeout is configured, It will replace the DefaultValues.DEFAULT_GLOBAL_TRANSACTION_TIMEOUT.
      *
@@ -48,6 +52,7 @@ public @interface GlobalTransactional {
     int timeoutMills() default DefaultValues.DEFAULT_GLOBAL_TRANSACTION_TIMEOUT;
 
     /**
+     * 全局事物名称, 必须全局唯一
      * Given name of the global transaction instance.
      *
      * @return Given name.
@@ -55,47 +60,63 @@ public @interface GlobalTransactional {
     String name() default "";
 
     /**
+     * 异常回滚类型, 默认所有异常都会回滚
      * roll back for the Class
+     *
      * @return
      */
     Class<? extends Throwable>[] rollbackFor() default {};
 
     /**
+     * 异常回滚类型, 默认所有异常都会回滚
      * roll back for the class name
+     *
      * @return
      */
     String[] rollbackForClassName() default {};
 
     /**
+     * 不回滚的异常类型
      * not roll back for the Class
+     *
      * @return
      */
     Class<? extends Throwable>[] noRollbackFor() default {};
 
     /**
+     * 不回滚的异常类型
      * not roll back for the class name
+     *
      * @return
      */
     String[] noRollbackForClassName() default {};
 
     /**
+     * 事物传播机制
+     * 支持六种机制, REQUIRED,REQUIRES_NEW
      * the propagation of the global transaction
+     *
      * @return
      */
     Propagation propagation() default Propagation.REQUIRED;
 
     /**
+     * 锁定重试间隔时间
+     * 这里的 internal 应该是interval才对
      * customized global lock retry internal(unit: ms)
      * you may use this to override global config of "client.rm.lock.retryInterval"
      * note: 0 or negative number will take no effect(which mean fall back to global config)
+     *
      * @return
      */
     int lockRetryInternal() default 0;
 
     /**
+     * 锁定重试次数
      * customized global lock retry times
      * you may use this to override global config of "client.rm.lock.retryTimes"
      * note: negative number will take no effect(which mean fall back to global config)
+     *
      * @return
      */
     int lockRetryTimes() default -1;
